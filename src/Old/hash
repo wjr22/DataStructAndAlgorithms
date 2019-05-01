@@ -1,0 +1,72 @@
+#include<stdio.h>
+#include<string.h>
+#define HASH_MAXSIZE	10240
+struct NODE{
+	char Forgin[15];		//key
+	char English[15];
+	struct NODE *next,*prev;
+};
+typedef struct NODE Node;
+struct HASH{
+	Node *ptr;
+	bool isUsed;
+	HASH(){
+		ptr=NULL;
+		isUsed=false;
+	};
+};
+typedef struct HASH Hash;
+// string hash function
+long long ELFHashFunc(const char *key){
+	long long hash=0,x=0;
+	while(*key){
+		hash=hash<<4+(*key++);
+		if((x=hash&0xF0000000L)!=0){
+			hash^=hash>>24;
+		}
+		hash &=~x;
+	}
+	return hash;
+}
+int main(){
+	char buf[80],En[15],For[15];
+	int i=0,flag=0;
+	FILE *fp;
+	Hash H[HASH_MAXSIZE];
+	fp=fopen("a.txt","r");
+	while(fgets(buf,80,fp)){
+		while(buf[i]!=' '){
+			En[i]=buf[i];
+			i++;
+		}
+		En[i]='\0';
+		i++;
+		while(buf[i+flag]){
+			For[flag]=buf[i+flag];
+			flag++;
+		}
+		For[flag-1]='\0';
+		if(H[ELFHashFunc(For)].isUsed==true){
+			Node *p=new Node;
+			strcpy(p->English,En);
+			strcpy(p->Forgin,For);
+			Node *ne=H[ELFHashFunc(For)].ptr->next;
+			p->next=ne;
+			ne->prev=p;
+			p->prev=H[ELFHashFunc(For)].ptr;
+			H[ELFHashFunc(For)].ptr=p;
+		}else{
+			H[ELFHashFunc(For)].isUsed=true;
+			H[ELFHashFunc(For)].ptr=new Node;
+			strcpy(H[ELFHashFunc(For)].ptr->Forgin,For);
+			strcpy(H[ELFHashFunc(For)].ptr->English,En);
+		}
+	}
+	fclose(fp);
+	while(1){
+		fgets(buf,80,stdin);
+		puts(H[ELFHashFunc(buf)].ptr->English);
+	}
+	getchar();
+	return 0;
+}
